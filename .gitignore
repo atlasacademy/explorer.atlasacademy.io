@@ -1,6 +1,7 @@
-/vendor
+/.env
 /.idea
-Homestead.json
-Homestead.yaml
-.env
-.phpunit.result.cache
+/.phpunit.result.cache
+/docker-compose.yml
+/Homestead.json
+/Homestead.yaml
+/vendor

@@ -13,6 +13,10 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+$router->get('/refresh', 'RefreshController@trigger');
+
+$router->group(['middleware' => 'auth'], function () use ($router) {
+    $router->get('/', 'HomeController@index');
+    $router->get('/{bucketName}', 'DirectoryController@root');
+    $router->get('/{bucketName}/{path:.+}', 'DirectoryController@display');
 });

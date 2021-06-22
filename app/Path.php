@@ -36,18 +36,21 @@ class Path
 
     public static function crumbs(string $path, string $bucketName): array
     {
-        $crumbs = ['/' => 'Home'];
+        $crumbs = [
+            '/' => 'Home',
+            '/' . $bucketName => $bucketName,
+        ];
 
         if ($path === '/')
             return $crumbs;
-        else
-            $crumbs['/' . $bucketName] = $bucketName;
 
         $tree = static::tree($path);
         foreach ($tree as $_path) {
             $location = '/' . $bucketName . ($_path === '/' ? '' : '/' . $_path);
             $crumbs[$location] = static::dirname($_path);
         }
+
+        $crumbs['/' . $bucketName . '/' . $path] = static::dirname($path);
 
         return $crumbs;
     }

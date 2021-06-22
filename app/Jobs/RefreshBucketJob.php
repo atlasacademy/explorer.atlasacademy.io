@@ -88,19 +88,20 @@ class RefreshBucketJob extends Job
             // sleep(1);
         } while ($objects['IsTruncated']);
 
-        BucketFile::query()->upsert(
-            array_map(function ($dir) use ($bucket) {
-                return [
-                    'bucket_id' => $bucket->id,
-                    'key' => $dir,
-                    'parent' => Path::parent($dir, 2),
-                    'size' => 0,
-                    'modified_at' => null,
-                    'stale' => false,
-                ];
-            }, array_keys($directories)),
-            ['bucket_id', 'key']
-        );
+        $data = array_map(function ($dir) use ($bucket) {
+            return [
+                'bucket_id' => $bucket->id,
+                'key' => $dir,
+                'parent' => Path::parent($dir, 2),
+                'size' => 0,
+                'modified_at' => null,
+                'stale' => false,
+            ];
+        }, array_keys($directories));
+
+        foreach (array_chunk($data, 1000) as $chunk) {
+            BucketFile::query()->upsert($chunk, ['bucket_id', 'key']);
+        }
 
         $bucket->files()->where('stale', '=', true)->delete();
     }

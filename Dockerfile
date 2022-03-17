@@ -12,7 +12,9 @@ ENV WEB_DOCUMENT_ROOT='/app/public' \
     QUEUE_CONNECTION='database' \
     REFRESH_KEY='' \
     S3_KEY='' \
-    S3_SECRET=''
+    S3_SECRET='' \
+    PUBLIC_BUCKET='' \
+    PUBLIC_BUCKET_URL=''
 
 COPY . /app
 COPY ./supervisor.conf /opt/docker/etc/supervisor.d/laravel.conf

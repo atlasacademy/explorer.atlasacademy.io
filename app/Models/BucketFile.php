@@ -28,6 +28,9 @@ class BucketFile extends Model
         if ($this->isDirectory())
             return "/{$bucket->name}/{$this->key}";
 
+        if ($bucket->name === getenv('PUBLIC_BUCKET'))
+            return getenv('PUBLIC_BUCKET_URL') + $this->key;
+
         return "https://{$bucket->name}.{$bucket->server}/{$this->key}";
     }
 

@@ -41,6 +41,7 @@ class DirectoryController extends Controller
 
         $files = $bucket->files()
             ->where('parent', '=', $path . '/')
+            ->orderByRaw('"key" not like \'%/\', length(`key`)')
             ->orderBy('key', 'ASC')
             ->get();
         if (!$files->count())

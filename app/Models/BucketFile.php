@@ -31,7 +31,7 @@ class BucketFile extends Model
         if ($bucket->name === getenv('PUBLIC_BUCKET'))
             return getenv('PUBLIC_BUCKET_URL') . $this->key;
 
-        return "https://{$bucket->name}.{$bucket->server}/{$this->key}";
+        return getenv('PUBLIC_BUCKET_URL') . "file/{$bucket->name}/{$this->key}";
     }
 
     public function sizeForHumans(): string

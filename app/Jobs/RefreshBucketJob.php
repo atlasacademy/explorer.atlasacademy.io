@@ -39,7 +39,7 @@ class RefreshBucketJob extends Job
 
         $client = new S3Client([
             'version' => 'latest',
-            'region' => 'us-east-1',
+            'region' => 'us-west-2',
             'endpoint' => "https://{$bucket->server}",
             'credentials' => [
                 'key' => env('S3_KEY'),

@@ -53,7 +53,10 @@ class RefreshBucketJob extends Job
         $directories = [];
 
         do {
-            $params = ['Bucket' => $bucket->name];
+            $params = [
+                'Bucket' => $bucket->name,
+                'MaxKeys' => 100000,
+            ];
             if ($marker)
                 $params['Marker'] = $marker;
 

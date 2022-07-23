@@ -39,34 +39,37 @@ class RefreshBucketJob extends Job
 
         $bucket->touch();
         $bucket->files()->update(['stale' => true]);
-        $directories = [];
 
 //        $files = $this->fetchViaAws($bucket);
-        $files = $this->fetchViaB2($bucket);
+        $this->fetchViaB2(
+            $bucket,
+            function ($files) use ($bucket) {
+                $directories = [];
+                foreach ($files as $data) {
+                    $tree = Path::tree($data['key']);
+                    foreach ($tree as $path) {
+                        $directories[$path] = 1;
+                    }
+                }
 
-        foreach ($files as $data) {
-            $tree = Path::tree($data['key']);
-            foreach ($tree as $path) {
-                $directories[$path] = 1;
+                BucketFile::query()->upsert($files, ['bucket_id', 'key']);
+
+                $data = array_map(function ($dir) use ($bucket) {
+                    return [
+                        'bucket_id' => $bucket->id,
+                        'key' => $dir,
+                        'parent' => Path::parent($dir, 2),
+                        'size' => 0,
+                        'modified_at' => null,
+                        'stale' => false,
+                    ];
+                }, array_keys($directories));
+
+                foreach (array_chunk($data, 1000) as $chunk) {
+                    BucketFile::query()->upsert($chunk, ['bucket_id', 'key']);
+                }
             }
-
-            BucketFile::query()->upsert($data, ['bucket_id', 'key']);
-        }
-
-        $data = array_map(function ($dir) use ($bucket) {
-            return [
-                'bucket_id' => $bucket->id,
-                'key' => $dir,
-                'parent' => Path::parent($dir, 2),
-                'size' => 0,
-                'modified_at' => null,
-                'stale' => false,
-            ];
-        }, array_keys($directories));
-
-        foreach (array_chunk($data, 1000) as $chunk) {
-            BucketFile::query()->upsert($chunk, ['bucket_id', 'key']);
-        }
+        );
 
         $bucket->files()->where('stale', '=', true)->delete();
     }
@@ -118,7 +121,7 @@ class RefreshBucketJob extends Job
         return $data;
     }
 
-    private function fetchViaB2(Bucket $bucket)
+    private function fetchViaB2(Bucket $bucket, $callback)
     {
         if (!$bucket->b2_id)
             throw new \Exception('b2_id is not set');
@@ -128,30 +131,33 @@ class RefreshBucketJob extends Job
             env('S3_SECRET'),
         );
 
-        $objects = $client->customListFiles(['BucketId' => $bucket->b2_id]);
+        $client->customListFiles(
+            ['BucketId' => $bucket->b2_id, 'MaxKeys' => 10000],
+            function ($objects) use ($bucket, $callback) {
+                $data = [];
+                foreach ($objects as $object) {
+                    /** @var File $object */
+                    $key = $object->getName();
+                    if (substr($key, -1) === '/')
+                        continue;
 
-        $data = [];
-        foreach ($objects as $object) {
-            /** @var File $object */
-            $key = $object->getName();
-            if (substr($key, -1) === '/')
-                continue;
+                    $modifiedAt = null;
+                    if ($object->getUploadTimestamp())
+                        $modifiedAt = date('Y-m-d H:i:s', floor($object->getUploadTimestamp() / 1000));
 
-            $modifiedAt = null;
-            if ($object->getUploadTimestamp())
-                $modifiedAt = date('Y-m-d H:i:s', floor($object->getUploadTimestamp() / 1000));
+                    $data[] = [
+                        'bucket_id' => $bucket->id,
+                        'key' => $key,
+                        'parent' => Path::parent($key),
+                        'size' => $object->getSize(),
+                        'modified_at' => $modifiedAt ?? date('Y-m-d H:i:s'),
+                        'stale' => false,
+                    ];
+                }
 
-            $data[] = [
-                'bucket_id' => $bucket->id,
-                'key' => $key,
-                'parent' => Path::parent($key),
-                'size' => $object->getSize(),
-                'modified_at' => $modifiedAt ?? date('Y-m-d H:i:s'),
-                'stale' => false,
-            ];
-        }
-
-        return $data;
+                $callback($data);
+            }
+        );
     }
 
 }

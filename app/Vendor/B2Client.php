@@ -36,8 +36,9 @@ class B2Client extends Client
      * Override of parent::listFiles() because of the following reasons:
      * - options suck, can't mod maxFileCount
      * - file constructor is half ass
+     * - change it to callback style to avoid passing hundreds of thousands of files back
      */
-    public function customListFiles(array $options)
+    public function customListFiles(array $options, $callback)
     {
         // if FileName is set, we only attempt to retrieve information about that single file.
         $fileName = !empty($options['FileName']) ? $options['FileName'] : null;
@@ -49,8 +50,6 @@ class B2Client extends Client
 
         $prefix = isset($options['Prefix']) ? $options['Prefix'] : '';
         $delimiter = isset($options['Delimiter']) ? $options['Delimiter'] : null;
-
-        $files = [];
 
         if (!isset($options['BucketId']) && isset($options['BucketName'])) {
             $options['BucketId'] = $this->getBucketIdFromName($options['BucketName']);
@@ -65,6 +64,8 @@ class B2Client extends Client
 
         // B2 returns, at most, 1000 files per "page". Loop through the pages and compile an array of File objects.
         while (true) {
+            $files = [];
+
             $response = $this->sendAuthorizedRequest('POST', 'b2_list_file_names', [
                 'bucketId'      => $options['BucketId'],
                 'startFileName' => $nextFileName,
@@ -91,6 +92,8 @@ class B2Client extends Client
                     );
                 }
             }
+
+            $callback($files);
 
             if ($fileName || $response['nextFileName'] === null) {
                 // We've got all the files - break out of loop.

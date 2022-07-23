@@ -8,6 +8,7 @@ use App\Path;
 use App\Vendor\B2Client;
 use Aws\S3\S3Client;
 use BackblazeB2\File;
+use Carbon\Carbon;
 
 class RefreshBucketJob extends Job
 {
@@ -32,9 +33,9 @@ class RefreshBucketJob extends Job
             return;
         }
 
-//        if ($bucket->updated_at->greaterThan(Carbon::now()->subMinutes(15))) {
-//            return;
-//        }
+        if ($bucket->updated_at->greaterThan(Carbon::now()->subMinutes(30))) {
+            return;
+        }
 
         $bucket->touch();
         $bucket->files()->update(['stale' => true]);

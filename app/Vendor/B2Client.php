@@ -89,7 +89,6 @@ class B2Client extends Client
                         $file['action'] ?? null,
                         $file['uploadTimestamp'] ?? null,
                     );
-                    dd($files);
                 }
             }
 

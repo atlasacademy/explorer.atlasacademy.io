@@ -41,11 +41,20 @@ class DirectoryController extends Controller
 
         $files = $bucket->files()
             ->where('parent', '=', $path . '/')
-            ->orderByRaw('"key" not like \'%/\', length(`key`)')
-            ->orderBy('key', 'ASC')
             ->get();
         if (!$files->count())
             abort(404);
+        
+        $directories = $files
+            ->filter(fn ($file) => preg_match('/\/$/', $file->key))
+            ->sortBy('key', SORT_NATURAL)
+            ->values();
+        $remaining = $files
+            ->filter(fn ($file) => !preg_match('/\/$/', $file->key))
+            ->sortBy('key', SORT_NATURAL)
+            ->values();
+
+        $files = $directories->merge($remaining);
 
         return view('directory', compact('bucket', 'files', 'parent', 'crumbs'));
     }

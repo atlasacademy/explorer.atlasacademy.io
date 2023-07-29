@@ -1,11 +1,13 @@
 @extends('_template')
 
+@section('title', $bucket->name . '/' . $path)
+
 @section('content')
     <nav>
         <ol class="breadcrumb">
-            @foreach ($crumbs as $path => $name)
+            @foreach ($crumbs as $fullPath => $name)
                 <li class="breadcrumb-item">
-                    <a href="{{ $path }}">{{ $name }}</a>
+                    <a href="{{ $fullPath }}">{{ $name }}</a>
                 </li>
             @endforeach
         </ol>

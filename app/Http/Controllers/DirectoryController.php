@@ -24,7 +24,7 @@ class DirectoryController extends Controller
             ->orderBy('key', 'ASC')
             ->get();
 
-        return view('directory', compact('bucket', 'files', 'parent', 'crumbs'));
+        return view('directory', compact('bucket', 'files', 'parent', 'crumbs', 'path'));
     }
 
     public function display(string $bucketName, string $path)
@@ -44,7 +44,7 @@ class DirectoryController extends Controller
             ->get();
         if (!$files->count())
             abort(404);
-        
+
         $directories = $files
             ->filter(fn ($file) => preg_match('/\/$/', $file->key))
             ->sortBy('key', SORT_NATURAL)
@@ -56,7 +56,7 @@ class DirectoryController extends Controller
 
         $files = $directories->merge($remaining);
 
-        return view('directory', compact('bucket', 'files', 'parent', 'crumbs'));
+        return view('directory', compact('bucket', 'files', 'parent', 'crumbs', 'path'));
     }
 
 }

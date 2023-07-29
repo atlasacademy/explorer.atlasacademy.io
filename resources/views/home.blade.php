@@ -1,5 +1,7 @@
 @extends('_template')
 
+@section('title', 'Home')
+
 @section('content')
     <table class="table">
         <thead>
